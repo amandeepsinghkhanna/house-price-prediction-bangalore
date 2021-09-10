@@ -1,4 +1,5 @@
 # Import statements:
+import bs4
 import requests # for making web requests
 import pandas as pd # for data wrangling
 from bs4 import BeautifulSoup # for extracting patterns from string of HTML code
@@ -30,12 +31,14 @@ class ScrapeCommonfloorListing(object):
         self,
         request_url,
         max_request_attempts,
-        area
+        area,
+        property_type
     ):
         self.request_url = request_url
         self.max_request_attempts = max_request_attempts
         self.area = area
         self.current_timestamp = datetime.now()
+        self.property_type = property_type
         
     @staticmethod
     def make_requests(request_url, max_request_attempts):
@@ -118,6 +121,26 @@ class ScrapeCommonfloorListing(object):
             value = extra_info_datum.find("span").text
             extra_info_dict_01[key] = value
 
+        extra_info_data_02 = (
+            extra_info_soup.find(
+                "div", attrs={"class": "featuresvap _graybox clearfix"}
+            ).find("ul").find_all("li")
+        )
+        extra_info_dict_02 = {}
+        for extra_info_datum in extra_info_data_02:
+            key = extra_info_datum.find("small").text
+            key = "_".join(key.replace("-", "_").lower().split())
+            value = extra_info_datum.find("span").text
+            extra_info_dict_02[key] = value
+
+        amenities = extra_info_soup.find(
+            "div", attrs={"class": "amivap amtextshowhide"}
+        )
+        if isinstance(amenities, bs4.element.Tag):
+            amenities = amenities.find("ul").find_all("li")
+            amenities = [amenity.text.strip() for amenity in amenities]
+            amenities = ", ".join(amenities)
+
         # creating the output DataFrame:
         df = pd.DataFrame({
             "listing_title": [listing_title],
@@ -131,12 +154,21 @@ class ScrapeCommonfloorListing(object):
             "direction_facing": [extra_info_dict_01.get("direction_facing")],
             "flooring_type": [extra_info_dict_01.get("flooring_type")],
             "parking": [extra_info_dict_01.get("parking")],
-            "year_of_construction":[extra_info_dict_01.get("year_of_construction")],
+            "year_of_construction":[
+                extra_info_dict_01.get("year_of_construction")
+            ],
             "property_on": [extra_info_dict_01.get("property_on")],
             "listed_on": [extra_info_dict_01.get("listed_on")],
             "ownership": [extra_info_dict_01.get("ownership")],
             "furnishing_state": [extra_info_dict_01.get("furnishing_state")],
-            "listed_by": [extra_info_dict_01.get("listed_by")]
+            "listed_by": [extra_info_dict_01.get("listed_by")],
+            "bedrooms": [extra_info_dict_02.get("bedrooms")],
+            "super_built_up_area":  [
+                extra_info_dict_02.get("super_built_up_area")
+            ],
+            "condition": [extra_info_dict_02.get("condition")],
+            "available_from": [extra_info_dict_02.get("available_from")],
+            "amenities": [amenities]
         })
         return df
 
@@ -172,4 +204,5 @@ class ScrapeCommonfloorListing(object):
             )
         extracted_listings["scrapped_timestamp"] = self.current_timestamp
         extracted_listings["area"] = self.area
+        extracted_listings["property_type"] = self.property_type
         return extracted_listings
