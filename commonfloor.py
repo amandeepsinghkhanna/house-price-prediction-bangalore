@@ -40,8 +40,8 @@ class ScrapeCommonfloorListing(object):
     @staticmethod
     def make_requests(request_url, max_request_attempts):
         """
-            method-name: make_requests
-            --------------------------
+            method-name: make_requests(staticmethod)
+            ----------------------------------------
             This method
             method-attributes:
             ------------------
@@ -69,7 +69,7 @@ class ScrapeCommonfloorListing(object):
     def extract_text_content(soup_object):
         """
             method-name: extract_text_content(staticmethod)
-            ---------------------------------
+            -----------------------------------------------
             method-input-parameters:
             ------------------------
             1. soup_object -> bs4.BeautifulSoup -> The soup object with the
@@ -108,6 +108,10 @@ class ScrapeCommonfloorListing(object):
         """
             method-name: scrape_listings_webpage
             ------------------------------------
+            method-inputs:
+            --------------
+            1. request_url
+            2. max_request_attempts
             method-outputs:
             ---------------
             1. extracted_listings -> pandas.core.DataFrame -> The pandas
@@ -136,3 +140,23 @@ class ScrapeCommonfloorListing(object):
             "https://commonfloor.com" + extracted_listings["listing_url"]
         )
         return extracted_listings
+
+    @staticmethod
+    def extract_extra_text_content(soup_obj):
+        """
+        method-name: extract_extra_text_content(staticmethod)
+        -----------------------------------------------------
+        method-inputs:
+        --------------
+        """
+        feature_infoset = (
+            soup_obj.find(
+            "div", attrs={"class": "featuresvap malign"}
+            ).find("ul").find_all("li")
+        )
+        feature_info_dict = {}
+        for feature in feature_infoset:
+            key = feature_infoset.find("small").text
+            value = feature_infoset.find("span").text
+            feature_info_dict[key] = value
+        return feature_info_dict
