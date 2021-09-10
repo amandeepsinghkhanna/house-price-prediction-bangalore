@@ -106,17 +106,17 @@ class ScrapeCommonfloorListing(object):
             listing_url, self.max_request_attempts
         )
         extra_info_soup = BeautifulSoup(extra_info_html)
-        extra_info_data = (
+        extra_info_data_01 = (
             extra_info_soup.find(
             "div", attrs={"class": "featuresvap malign"}
             ).find("ul").find_all("li")
         )
-        extra_info_dict = {}
-        for extra_info_datum in extra_info_data:
+        extra_info_dict_01 = {}
+        for extra_info_datum in extra_info_data_01:
             key = extra_info_datum.find("small").text
             key = "_".join(key.lower().split())
             value = extra_info_datum.find("span").text
-            extra_info_dict[key] = value
+            extra_info_dict_01[key] = value
 
         # creating the output DataFrame:
         df = pd.DataFrame({
@@ -127,16 +127,16 @@ class ScrapeCommonfloorListing(object):
             "possession_on": [basic_info_dict.get("possession_on")],
             "floor": [basic_info_dict.get("floor")],
             "bathrooms": [basic_info_dict.get("bathrooms")],
-            "brokerage_terms": [extra_info_dict.get("brokerage_terms")],
-            "direction_facing": [extra_info_dict.get("direction_facing")],
-            "flooring_type": [extra_info_dict.get("flooring_type")],
-            "parking": [extra_info_dict.get("parking")],
-            "year_of_construction":[extra_info_dict.get("year_of_construction")],
-            "property_on": [extra_info_dict.get("property_on")],
-            "listed_on": [extra_info_dict.get("listed_on")],
-            "ownership": [extra_info_dict.get("ownership")],
-            "furnishing_state": [extra_info_dict.get("furnishing_state")],
-            "listed_by": [extra_info_dict.get("listed_by")]
+            "brokerage_terms": [extra_info_dict_01.get("brokerage_terms")],
+            "direction_facing": [extra_info_dict_01.get("direction_facing")],
+            "flooring_type": [extra_info_dict_01.get("flooring_type")],
+            "parking": [extra_info_dict_01.get("parking")],
+            "year_of_construction":[extra_info_dict_01.get("year_of_construction")],
+            "property_on": [extra_info_dict_01.get("property_on")],
+            "listed_on": [extra_info_dict_01.get("listed_on")],
+            "ownership": [extra_info_dict_01.get("ownership")],
+            "furnishing_state": [extra_info_dict_01.get("furnishing_state")],
+            "listed_by": [extra_info_dict_01.get("listed_by")]
         })
         return df
 
