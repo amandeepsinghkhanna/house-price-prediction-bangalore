@@ -5,23 +5,21 @@ from bs4 import BeautifulSoup # for extracting patterns from string of HTML code
 from datetime import datetime # for datetime operations
 from requests.api import request # for extracting content from HTML
 
-class ScrapeCommonfloor(object):
+class ScrapeCommonfloorListing(object):
     """
-        class-name: ScrapeCommonfloor
-        -----------------------------
+        class-name: ScrapeCommonfloorListing
+        ------------------------------------
         class-description:
         ------------------
-        This class that makes a request to a specified URL from the website 
-        https://commonfloor.com and extracts the relevant information from its 
-        source code.
+        This class that makes a request to the website https://commonfloor.com 
+        and extracts the relevant information from its source code.
         class-attributes:
         -----------------
         1. request_url -> str -> The url that needs to be scraped.
-        2. max_request_attemps -> int -> Maximum requests to make if the 
-                                         previous request attempt did not result
-                                         in a status == 200.
+        2. max_request_attemps -> int -> Maximum requests to make if the
+        previous request attempt did not result in a status == 200.
         3. area -> str -> The area for which the property listings will be 
-                          scraped.
+        scraped.
         class-methods:
         --------------
         1. make_requests
@@ -38,8 +36,9 @@ class ScrapeCommonfloor(object):
         self.max_request_attempts = max_request_attempts
         self.area = area
         self.current_timestamp = datetime.now()
-
-    def make_requests(self):
+        
+    @staticmethod
+    def make_requests(request_url, max_request_attempts):
         """
             method-name: make_requests
             --------------------------
@@ -48,20 +47,18 @@ class ScrapeCommonfloor(object):
             ------------------
             1. request_url
             2. max_request_attempts
-            3. area
-            4. current_timestamp
             method-output:
             --------------
             1. request_result.text -> str -> Source code of the requested 
-                                             website.
+            website.
         """
-        for request_attempt in range(self.max_request_attempts):
-            request_result = requests.get(url=self.request_url)
+        for request_attempt in range(max_request_attempts):
+            request_result = requests.get(url=request_url)
             if request_result.ok:
                 return request_result.text
             else:
                 exception_msg = (
-                    f"All of the {self.max_request_attempts}"+ 
+                    f"All of the {max_request_attempts}"+ 
                     "made to https://commonfloor.com have failed!"
                 )
                 raise Exception(
@@ -75,14 +72,12 @@ class ScrapeCommonfloor(object):
             ---------------------------------
             method-input-parameters:
             ------------------------
-            1. soup_object -> bs4.BeautifulSoup -> The soup object with the 
-                                                   source code of the requested
-                                                   website.
+            1. soup_object -> bs4.BeautifulSoup -> The soup object with the
+            source code of the requested website.
             method-outputs:
             ---------------
-            1. df -> pandas.core.DataFrame -> The pandas DataFrame object with 
-                                              the required data extracted from 
-                                              the source code.
+            1. df -> pandas.core.DataFrame -> The pandas DataFrame object 
+            with the required data extracted from the source code.
         """
         listing_title = (
             soup_object.find("div", attrs={"class": "st_title"}).text
@@ -113,10 +108,14 @@ class ScrapeCommonfloor(object):
         """
             method-name: scrape_listings_webpage
             ------------------------------------
-            method-attributes:
-            ------------------
+            method-outputs:
+            ---------------
+            1. extracted_listings -> pandas.core.DataFrame -> The pandas
+            DataFrame object with the required listing data.
         """
-        html_code = self.make_requests()
+        html_code = self.make_requests(
+            self.request_url, self.max_request_attempts
+        )
         soup_object = BeautifulSoup(html_code)
         scraped_listings = soup_object.findAll(
             "div", attrs={"class": "snb-tile-info"}
