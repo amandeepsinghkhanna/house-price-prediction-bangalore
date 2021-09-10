@@ -65,8 +65,7 @@ class ScrapeCommonfloorListing(object):
                     exception_msg
                 )
 
-    @staticmethod
-    def extract_text_content(soup_object):
+    def extract_text_content(self, soup_object):
         """
             method-name: extract_text_content(staticmethod)
             -----------------------------------------------
@@ -89,19 +88,56 @@ class ScrapeCommonfloorListing(object):
             soup_object.find("div", attrs={"class": "st_title"})
             .find("a").attrs["href"]
         )
-        info_data = soup_object.findAll("div", attrs={"class": "infodata"})
-        info_data_dict = {}
-        for info_datum in info_data:
-            key = info_datum.find("small").text
-            value = info_datum.find("span").text
-            info_data_dict[key] = value
+        listing_url = "https://commonfloor.com" + listing_url
+
+        # basic information extraction:
+        basic_info_data = soup_object.findAll(
+            "div", attrs={"class": "infodata"}
+        )
+        basic_info_dict = {}
+        for basic_info_datum in basic_info_data:
+            key = basic_info_datum.find("small").text
+            key = "_".join(key.lower().split(" "))
+            value = basic_info_datum.find("span").text
+            basic_info_dict[key] = value
+
+        # extra information extraction:
+        extra_info_html = self.make_requests(
+            listing_url, self.max_request_attempts
+        )
+        extra_info_soup = BeautifulSoup(extra_info_html)
+        extra_info_data = (
+            extra_info_soup.find(
+            "div", attrs={"class": "featuresvap malign"}
+            ).find("ul").find_all("li")
+        )
+        extra_info_dict = {}
+        for extra_info_datum in extra_info_data:
+            key = extra_info_datum.find("small").text
+            key = "_".join(key.lower().split())
+            value = extra_info_datum.find("span").text
+            extra_info_dict[key] = value
+
+        # creating the output DataFrame:
         df = pd.DataFrame({
             "listing_title": [listing_title],
             "listing_price": [listing_price],
-            "listing_url": [listing_url]
+            "listing_url": [listing_url],
+            "carpet_area": [basic_info_dict.get("carpet_area")],
+            "possession_on": [basic_info_dict.get("possession_on")],
+            "floor": [basic_info_dict.get("floor")],
+            "bathrooms": [basic_info_dict.get("bathrooms")],
+            "brokerage_terms": [extra_info_dict.get("brokerage_terms")],
+            "direction_facing": [extra_info_dict.get("direction_facing")],
+            "flooring_type": [extra_info_dict.get("flooring_type")],
+            "parking": [extra_info_dict.get("parking")],
+            "year_of_construction":[extra_info_dict.get("year_of_construction")],
+            "property_on": [extra_info_dict.get("property_on")],
+            "listed_on": [extra_info_dict.get("listed_on")],
+            "ownership": [extra_info_dict.get("ownership")],
+            "furnishing_state": [extra_info_dict.get("furnishing_state")],
+            "listed_by": [extra_info_dict.get("listed_by")]
         })
-        for key, value in info_data_dict.items():
-            df[key] = value
         return df
 
     def scrape_listings_webpage(self):
@@ -136,27 +172,4 @@ class ScrapeCommonfloorListing(object):
             )
         extracted_listings["scrapped_timestamp"] = self.current_timestamp
         extracted_listings["area"] = self.area
-        extracted_listings["listing_url"] = (
-            "https://commonfloor.com" + extracted_listings["listing_url"]
-        )
         return extracted_listings
-
-    @staticmethod
-    def extract_extra_text_content(soup_obj):
-        """
-        method-name: extract_extra_text_content(staticmethod)
-        -----------------------------------------------------
-        method-inputs:
-        --------------
-        """
-        feature_infoset = (
-            soup_obj.find(
-            "div", attrs={"class": "featuresvap malign"}
-            ).find("ul").find_all("li")
-        )
-        feature_info_dict = {}
-        for feature in feature_infoset:
-            key = feature_infoset.find("small").text
-            value = feature_infoset.find("span").text
-            feature_info_dict[key] = value
-        return feature_info_dict
